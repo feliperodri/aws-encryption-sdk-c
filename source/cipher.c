@@ -288,8 +288,8 @@ static int update_frame_aad(
 
     switch (body_frame_type) {
         case FRAME_TYPE_SINGLE: aad_string = "AWSKMSEncryptionClient Single Block"; break;
-        case FRAME_TYPE_FRAME: aad_string = "AWSKMSEncryptionClient Frame"; break;
-        case FRAME_TYPE_FINAL: aad_string = "AWSKMSEncryptionClient Final Frame"; break;
+        case FRAME_TYPE_FRAME: aad_string =  "AWSKMSEncryptionClient Frame"; break;
+        case FRAME_TYPE_FINAL: aad_string =  "AWSKMSEncryptionClient Final Frame"; break;
         default: return aws_raise_error(AWS_ERROR_UNKNOWN);
     }
 
@@ -370,6 +370,16 @@ int aws_cryptosdk_encrypt_body(
         int in_len = incurs.len > INT_MAX ? INT_MAX : incurs.len;
         int ct_len;
 
+        uint8_t* debug_out_1 = outbuf.buffer;
+        uint8_t debug_1 = *debug_out_1;
+        assert(__CPROVER_w_ok(debug_out_1, 1));
+        assert(__CPROVER_r_ok(debug_out_1, 1));
+
+        uint8_t* debug_out_2 = outbuf.buffer + outbuf.len;
+        uint8_t debug_2 = *debug_out_2;
+        assert(__CPROVER_w_ok(debug_out_2, 1));
+        assert(__CPROVER_r_ok(debug_out_2, 1));
+
         if (!EVP_EncryptUpdate(ctx, outbuf.buffer + outbuf.len, &ct_len, incurs.ptr, in_len)) goto out;
         /*
          * The next two advances should never fail ... but check the return values
@@ -393,6 +403,7 @@ out:
         *outp = outbuf;
         return AWS_OP_SUCCESS;
     } else {
+        struct aws_byte_buf debug = *outp;
         aws_byte_buf_secure_zero(outp);
         return aws_raise_error(result);
     }
